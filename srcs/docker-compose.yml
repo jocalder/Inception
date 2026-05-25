@@ -1,0 +1,89 @@
+version:  "3.8"
+
+secrets:
+  db_password:
+    file: ..secrets/db_password.txt
+
+  db_root_password:
+    file: ../secrets/db_root_password.txt
+
+  wp_admin_password:
+    file: ../secrets/wp_admin_password.txt
+
+  wp_user_password:
+    file: ../secrets/wp_user_password.txt
+
+networks:
+  inception-network:
+    driver: bridge
+
+volumes:
+  mariadb-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: home/${USER}/data/mariadb
+
+  wordpress-files:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: home/${USER}/data/wordpress
+
+services:
+
+  nginx:
+    build:
+      context: ./requirements/nginx
+      dockerfile: Dockerfile
+    image: nginx
+    restart: unless-stopped
+
+    ports:
+      - "443:443"
+    networks:
+      - inception-network
+    volumes:
+      - wordpress-files:/var/www/html:ro
+    depends_on:
+      - wordpress
+
+  wordpress:
+    build:
+      context: ./requirements/wordpress
+      dockerfile: Dockerfile
+    image: wordpress
+    restart: unless-stopped
+
+    networks:
+      - inception-network
+    volumes:
+      - wordpress-files:/var/www/html
+    env_file:
+      - .env
+    secrets:
+      - db_password
+      - wp_admin_password
+      - wp_user_password
+    depends_on:
+      - mariadb
+  mariadb:
+    build:
+      context: ./requirements/mariadb
+      dockerfile: Dockerfile
+    image: mariadb
+    restart: unless-stopped
+
+    networks:
+      - inception-network
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    env_file:
+      - .env
+    secrets:
+      - db_root_password
+      - db_password
+    expose:
+      - "3306"
