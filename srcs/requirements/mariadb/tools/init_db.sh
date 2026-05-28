@@ -7,18 +7,15 @@ DB_PASSWORD=$(cat "$MYSQL_PASSWORD_FILE")
 
 if [ ! -d "/var/lib/mysql/mysql" ]; then
 	echo "Initializing MariaDB..."
-	mariadb-install-db \
-		--user=mysql \
-		--datadir=/var/lib/mysql
+	mariadb-install-db --user=mysql --datadir=/var/lib/mysql
 
 	echo "Starting temporary MariaDB..."
-	mariadb \
-		--user=mysql \
+	mariadb --user=mysql \
 		--skip-networking \
 		--socket=/run/mysqld/mysqld.sock &
+	PID="$!"
 
-	until mariadb-admin ping --silent
-	do
+	until mariadb-admin ping --socket=/run/mysql/mysqld.sock --silent; do
 		sleep 2
 	done
 
@@ -42,8 +39,8 @@ FLUSH PRIVILEGES;
 
 EOF
 	echo "Stop temporary MariaDB..."
-	mariadb-admin -u root \
-	-p"${DB_ROOT_PASSWORD}" shutdown
+	mariadb-admin -u root -p"${DB_ROOT_PASSWORD}" shutdown
+	wait "$PID" 2>/dev/null || true
 	echo "Database Initialized!!!"
 else
 	echo "Database already exists"

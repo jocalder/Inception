@@ -1,5 +1,7 @@
 FROM	debian:12-slim
 
+ENV	DEBIAN_FRONTEND=noninteractive
+
 RUN	apt-get update && apt-get install -y --no-install-recommends \
 	nginx \
 	openssl \
@@ -16,8 +18,8 @@ RUN	openssl req -x509 -nodes -days 365 \
 	-out /etc/nginx/ssl/inception.crt \
 	-subj "/C=ES/ST=Madrid/L=Madrid/O=42/OU=42/CN=jocalder.42.fr"
 
-COPY	conf/nginx.conf /etc/nginx/conf.d/default.conf
+COPY	tools/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE	443
 
-CMD	["nginx", "-g", "daemon off;"]
+ENTRYPOINT	["nginx", "-g", "daemon off;"]

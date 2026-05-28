@@ -24,13 +24,12 @@ RUN	mkdir -p /var/www/html && \
 	chown -R www-data:www-data /var/www/html && \
 	chmod -R 755 /var/www/html
 
-COPY	conf/www.conf /etc/php/8.2/fpm/pool.d/www.conf
+COPY	tools/www.conf /etc/php/8.2/fpm/pool.d/www.conf
 COPY	tools/setup_wordpress.sh /usr/local/bin/
-RUN	chmod +x /usrlocal/bin/setup_wordpress.sh
+RUN	chmod +x /usr/local/bin/setup_wordpress.sh
 
 WORKDIR	/var/www/html
 
 EXPOSE	9000
 
-CMD	["/usr/local/bin/setup_wordpress.sh"]
-
+ENTRYPOINT	["/usr/local/bin/setup_wordpress.sh"]

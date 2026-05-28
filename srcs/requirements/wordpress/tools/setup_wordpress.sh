@@ -37,7 +37,7 @@ if [ ! -f /var/www/html/wp-config.php ]; then
 	echo "Installing WordPress..."
 	wp core install \
 		--url="https://$DOMAIN_NAME" \
-		--tittle="Inception" \
+		--title="Inception" \
 		--admin_user="$WP_ADMIN_USER" \
 		--admin_password="$WP_ADMIN_PASS" \
 		--admin_email="$WP_ADMIN_EMAIL" \
@@ -50,7 +50,7 @@ if [ ! -f /var/www/html/wp-config.php ]; then
 		--role=author \
 		--user_pass="$WP_USER_PASS" \
 		--allow-root \
-		--path=/var/www/hmtl
+		--path=/var/www/html
 
 	echo "Setting permissions..."
 	chown -R www-data:www-data /var/www/html

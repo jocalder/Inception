@@ -2,7 +2,7 @@ version:  "3.8"
 
 secrets:
   db_password:
-    file: ..secrets/db_password.txt
+    file: ../secrets/db_password.txt
 
   db_root_password:
     file: ../secrets/db_root_password.txt
@@ -23,14 +23,14 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: home/${USER}/data/mariadb
+      device: /home/${USER}/data/mariadb
 
   wordpress-files:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: home/${USER}/data/wordpress
+      device: /home/${USER}/data/wordpress
 
 services:
 
