@@ -5,22 +5,27 @@ set -e
 DB_ROOT_PASSWORD=$(cat "$MYSQL_ROOT_PASSWORD_FILE")
 DB_PASSWORD=$(cat "$MYSQL_PASSWORD_FILE")
 
-if [ ! -d "/var/lib/mysql/mysql" ]; then
+if [ ! -d "/var/lib/mysql/${MYSQL_DATABASE}" ]; then
 	echo "Initializing MariaDB..."
 	mariadb-install-db --user=mysql --datadir=/var/lib/mysql
 
 	echo "Starting temporary MariaDB..."
-	mariadb --user=mysql \
+	mysqld --user=mysql \
 		--skip-networking \
 		--socket=/run/mysqld/mysqld.sock &
 	PID="$!"
 
-	until mariadb-admin ping --socket=/run/mysql/mysqld.sock --silent; do
-		sleep 2
+	for i in $(seq 1 30); do
+		mariadb-admin ping --socket=/run/mysqld/mysqld.sock --silent && break
+		sleep 1
 	done
+	mariadb-admin ping --socket=/run/mysqld/mysqld.sock --silent || {
+		echo "Error: MariaDB failed to satrt"
+		exit 1
+	}
 
 	echo "Creating database and users..."
-	mariadb << EOF
+	mariadb --socket=/run/mysqld/mysqld.sock << EOF
 
 ALTER USER 'root'@'localhost'
 IDENTIFIED BY '${DB_ROOT_PASSWORD}';
@@ -39,7 +44,7 @@ FLUSH PRIVILEGES;
 
 EOF
 	echo "Stop temporary MariaDB..."
-	mariadb-admin -u root -p"${DB_ROOT_PASSWORD}" shutdown
+	mariadb-admin -u root -p"${DB_ROOT_PASSWORD}" shutdown || true
 	wait "$PID" 2>/dev/null || true
 	echo "Database Initialized!!!"
 else
@@ -47,4 +52,4 @@ else
 fi
 
 echo "Starting MariaDB!!!"
-exec mariadb --user=mysql --console
+exec mysqld --user=mysql

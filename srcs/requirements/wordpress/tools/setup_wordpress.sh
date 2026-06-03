@@ -3,7 +3,7 @@
 set -e
 
 DB_PASSWORD=$(cat /run/secrets/db_password)
-WP_ADMIN_PASS=$(cat /run/secrets/wp_admin-password)
+WP_ADMIN_PASS=$(cat /run/secrets/wp_admin_password)
 WP_USER_PASS=$(cat /run/secrets/wp_user_password)
 
 echo "Waiting for MariaDB..."
@@ -22,8 +22,8 @@ echo "MariaDB ready..."
 if [ ! -f /var/www/html/wp-config.php ]; then
 	echo "Downloading WordPress..."
 	wp core download \
-		--path=/var/www/html \
-		--allow-root
+		--allow-root \
+		--path=/var/www/html
 
 	echo "Creating wp-config.php..."
 	wp config create \
@@ -53,6 +53,8 @@ if [ ! -f /var/www/html/wp-config.php ]; then
 		--path=/var/www/html
 
 	echo "Setting permissions..."
+	rm -f /var/www/html/index.nginx-debian.html
+	rm -f /var/www/html/index.html
 	chown -R www-data:www-data /var/www/html
 	find /var/www/html -type d -exec chmod 755 {} \;
 	find /var/www/html -type f -exec chmod 644 {} \;
