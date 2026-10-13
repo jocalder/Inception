@@ -10,7 +10,7 @@ The project is designed around the principles of **containerization**, **service
 
 The infrastructure is composed of three main services:
 
-* **NGINX** — acts as the entry point to the infrastructure and provides HTTPS access.
+* **NGINX** — acts as the entry point to the infrastructure and provides HTTPS access, on port 443.
 * **WordPress** — provides the web application and PHP execution environment.
 * **MariaDB** — provides the database used by WordPress.
 
@@ -20,9 +20,9 @@ The project also demonstrates how several independent services can be combined t
 
 ### Project Architecture
 
-The basic architecture can be represented as follows:
+The basic architecture be represented as follows:
 
-```text
+
                          HTTPS
                           │
                           ▼
@@ -45,7 +45,7 @@ The basic architecture can be represented as follows:
                  └─────────────────┘
 
                   Docker Network
-```
+
 
 ### Docker
 
@@ -70,7 +70,7 @@ The main design choices are:
 
 The project contains the configuration and source files required to build the infrastructure, including:
 
-```text
+
 ├── Makefile
 ├── README.md
 ├── secrets
@@ -96,11 +96,14 @@ The project contains the configuration and source files required to build the in
             └── tools
                 ├── setup_wordpress.sh
                 └── www.conf
-```
+                
 
-Every service has its own configuration and build instructions.
+The Makefile contains shortcuts for building, starting, stopping and cleaning the infraestructure.
 
----
+The srcs/docker-compose.yml file defines the services, images, network, volumes, enviroment configuration and secrets.
+
+The .env file contains the non-secret environment configuration required by WordPress and MariaDB.
+
 
 # Instructions
 
@@ -112,120 +115,117 @@ The project requires:
 * Sufficient disk space for Docker images, containers and volumes
 * Docker
 * Docker Compose
-* Git
+* make
+* The project files and the required files
 
-The project was designed to run on a Linux environment.
+The project was designed to run on a Linux environment (Debian 13).
 
 ## Configuration
 
-Before starting the project, configure the environment variables required by the infrastructure.
+Before starting the project, check the following:
 
-Sensitive configuration such as passwords should not be hard-coded directly into Dockerfiles or application configuration files.
+Before starting the infrastructure, check the following:
 
-For example:
+The .env file exists in srcs/.
+The four password files exist in the secrets/ directory at the paths expected by Compose.
+The directories /home/jocalder/data/mariadb and /home/jocalder/data/wordpress can be created and accessed by Docker.
+The domain jocalder.42.fr resolves to the machine running the infrastructure.
 
-```text
-DOMAIN_NAME=login.42.fr
-MYSQL_DATABASE=wordpress
-MYSQL_USER=wordpress
-MYSQL_PASSWORD=********
-MYSQL_ROOT_PASSWORD=********
-```
+For local testing, the domain can be added to /etc/hosts:
 
-The actual values should be adapted to the local environment.
-
-## Building and starting the infrastructure
-
-Clone the repository:
-
-```bash
-git clone https://github.com/jocalder/Inception.git
-cd inception
-```
-
-Build the Docker images:
-
-```bash
-make
-```
-
-Depending on the Makefile implementation, this will normally execute Docker Compose and build the required images.
-
-The infrastructure can also be started directly with:
-
-```bash
-docker compose -f srcs/docker-compose.yml up --build
-```
-
-If the system uses the legacy Docker Compose command:
-
-```bash
-docker-compose -f srcs/docker-compose.yml up --build
-```
-
-## Stopping the infrastructure
-
-To stop the running containers:
-
-```bash
-make down
-```
-
-or:
-
-```bash
-docker compose -f srcs/docker-compose.yml down
-```
-
-## Checking running containers
-
-To see the containers currently running:
-
-```bash
-docker ps
-```
-
-To see all containers, including stopped containers:
-
-```bash
-docker ps -a
-```
-
-## Checking Docker networks
-
-```bash
-docker network ls
-```
-
-The project should create a dedicated network used by the services.
-
-## Checking Docker volumes
-
-```bash
-docker volume ls
-```
-
-Volumes are used to keep persistent data even when containers are stopped or recreated.
-
-## Accessing the website
-
-Once the infrastructure is running, the WordPress website can be accessed through the configured domain:
-
-```text
-https://jocalder.42.fr
-```
-
-The domain must resolve to the machine running the Docker infrastructure.
-
-For a local environment, the `/etc/hosts` file can be configured accordingly:
-
-```text
 127.0.0.1 jocalder.42.fr
-```
 
-The exact domain depends on the login and configuration used for the project.
+This entry is appropriate when the browser and Docker infrastructure are running on the same machine. If the browser is on another machine, the entry must point to the Docker host's IP address.
 
----
+Build the images
+
+From the root of the repository, run:
+
+make build
+
+This creates the two data directories if necessary and builds the Docker images using srcs/docker-compose.yml.
+
+Start the infrastructure
+
+Run:
+
+make
+
+The default target builds the images, starts the services in detached mode and prints the website URL.
+
+Alternatively, if the images have already been built:
+
+make up
+Check the containers
+
+To check the status of the services:
+
+make status
+
+To follow the logs:
+
+make logs
+
+To inspect a specific service:
+
+docker logs nginx
+docker logs wordpress
+docker logs mariadb
+
+To list running containers directly:
+
+docker ps
+
+## Access WordPress
+
+Open the following address in a browser:
+
+https://jocalder.42.fr
+
+NGINX listens on port 443. The HTTPS connection depends on the TLS configuration and certificate configured in the NGINX service.
+
+Stop the infrastructure
+
+Run:
+
+make down
+
+This stops and removes the containers managed by the Compose project without explicitly removing the persistent volumes.
+
+Remove containers and images
+
+Run:
+
+make clean
+
+This first stops the infrastructure and then asks Docker Compose to remove the project's images.
+
+Full cleanup
+
+Run:
+
+make fclean
+
+Rebuild from scratch
+
+Run:
+
+make re
+
+This executes the full cleanup followed by a new build and startup. Existing database and WordPress data will remove.
+
+Available Makefile targets
+Command	Purpose
+make	        Build images and start the infrastructure
+make build	    Create data directories and build images
+make up	        Start services in detached mode
+make down	    Stop and remove containers
+make logs	    Follow Compose logs
+make status	    Display Compose service status
+make clean	    Remove containers and images
+make fclean	    Perform a full cleanup
+make re	        Clean, rebuild and restart
+make help	    Display the available commands
 
 # Services
 
@@ -270,7 +270,6 @@ It stores WordPress data such as:
 
 The database is kept in a Docker volume so that the data remains persistent when the MariaDB container is recreated.
 
----
 
 # Technical Choices
 
@@ -314,7 +313,7 @@ Disadvantages:
 
 For this project, Docker is appropriate because the objective is to create an infrastructure composed of several isolated services while keeping the resource requirements relatively small.
 
----
+
 
 # Secrets vs Environment Variables
 
@@ -324,11 +323,9 @@ Both mechanisms can be used to provide configuration values to containers, but t
 
 Environment variables are convenient for configuration such as:
 
-```text
 DOMAIN_NAME
 MYSQL_DATABASE
 MYSQL_USER
-```
 
 They can also contain passwords, although sensitive credentials should preferably use a dedicated secrets mechanism when available.
 
@@ -349,7 +346,6 @@ For sensitive production environments, a secrets mechanism is generally preferab
 
 In this project, configuration values and credentials are separated from the Dockerfiles so that sensitive information is not embedded in the images.
 
----
 
 # Docker Network vs Host Network
 
@@ -361,9 +357,8 @@ Containers can communicate with each other using their service names.
 
 For example:
 
-```text
 nginx → wordpress → mariadb
-```
+
 
 The database does not need to be exposed directly to the host.
 
@@ -382,7 +377,6 @@ This can provide simpler networking in some situations, but it reduces network i
 
 For Inception, a dedicated Docker network is used because the services need to communicate internally while only the required public service should be exposed externally.
 
----
 
 # Docker Volumes vs Bind Mounts
 
@@ -394,7 +388,7 @@ They are particularly useful for databases and application data.
 
 For example:
 
-```text
+
 MariaDB
    │
    ▼
@@ -402,7 +396,7 @@ Docker Volume
    │
    ▼
 Persistent database data
-```
+
 
 Advantages:
 
@@ -417,12 +411,11 @@ A bind mount maps a specific directory or file from the host filesystem into a c
 
 Example:
 
-```text
 Host directory
       │
       ▼
 Container directory
-```
+
 
 Advantages:
 
@@ -438,7 +431,7 @@ Disadvantages:
 
 For this project, Docker volumes are used for persistent WordPress and MariaDB data because the data needs to survive container recreation.
 
----
+
 
 # Persistence
 
@@ -453,7 +446,6 @@ The main persistent data includes:
 
 This allows containers to be rebuilt or recreated without losing the application data stored in the volumes.
 
----
 
 # Security
 
@@ -469,83 +461,7 @@ Several security principles are applied in the infrastructure:
 
 TLS certificates are configured in NGINX so that external communication with the WordPress website is encrypted.
 
----
 
-# Useful Docker Commands
-
-List images:
-
-```bash
-docker images
-```
-
-List running containers:
-
-```bash
-docker ps
-```
-
-List all containers:
-
-```bash
-docker ps -a
-```
-
-Display container logs:
-
-```bash
-docker logs <container_name>
-```
-
-Enter a running container:
-
-```bash
-docker exec -it <container_name> /bin/bash
-```
-
-List networks:
-
-```bash
-docker network ls
-```
-
-Inspect a network:
-
-```bash
-docker network inspect <network_name>
-```
-
-List volumes:
-
-```bash
-docker volume ls
-```
-
-Inspect a volume:
-
-```bash
-docker volume inspect <volume_name>
-```
-
-Stop all Compose services:
-
-```bash
-docker compose down
-```
-
-Rebuild the services:
-
-```bash
-docker compose build
-```
-
-Start the services:
-
-```bash
-docker compose up
-```
-
----
 
 # Resources
 
@@ -598,24 +514,11 @@ https://man7.org/linux/man-pages/
 
 These resources are useful for understanding Linux commands, permissions, processes, networking and system administration.
 
-## Docker Networking and Containers
 
-Additional educational resources can be found through:
-
-* Docker official documentation.
-* Docker's official guides.
-* Linux networking documentation.
-* NGINX documentation.
-* MariaDB documentation.
-* WordPress documentation.
-
-These resources provide information about containerization, networking, persistent storage, web servers and database administration.
-
----
 
 # AI Usage
 
-AI-assisted tools were used as a supplementary learning and troubleshooting resource during the project.
+AI-assisted tools were used as a supplementary resource to clarify technical concepts, understand configuration options and investigate errors encountered during development.
 
 They were used to:
 
@@ -627,23 +530,14 @@ They were used to:
 
 The project's configuration, implementation and testing were carried out as part of the learning process, with official documentation and technical references used to verify the relevant concepts.
 
----
+
 
 # Conclusion
 
 Inception demonstrates how to build a small multi-service infrastructure using Docker.
 
-The project combines:
+This project brings together NGINX, WordPress and MariaDB in a Docker-based infrastructure. Each service has its own Dockerfile and container, while a dedicated bridge network allows internal communication.
 
-* Docker containers
-* Docker Compose
-* NGINX
-* WordPress
-* PHP-FPM
-* MariaDB
-* HTTPS/TLS
-* Docker networks
-* Docker volumes
-* Linux system administration
+Persistent data is stored in host directories through Docker named volumes, and passwords are supplied through file-backed Compose secrets.
 
-The main objective is not simply to run WordPress, but to understand how independent services can be isolated, connected, configured and maintained as part of a reproducible infrastructure.
+The result is a reproducible environment that demonstrates container management, service networking, persistent storage and the configuration of a small HTTPS-enabled web infrastructure.
