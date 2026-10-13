@@ -156,6 +156,7 @@ The default target builds the images, starts the services in detached mode and p
 Alternatively, if the images have already been built:
 
 make up
+
 Check the containers
 
 To check the status of the services:
