@@ -22,6 +22,10 @@ for i in $(seq 1 30); do
 	sleep 2
 done
 
+if [ "$DB_READY" -ne 1 ]; then
+	echo "Error: MariaDB did not become ready in time"
+fi
+
 echo "MariaDB ready..."
 
 if [ ! -f /var/www/html/wp-config.php ]; then
