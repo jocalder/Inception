@@ -8,12 +8,17 @@ WP_USER_PASS=$(cat /run/secrets/wp_user_password)
 
 echo "Waiting for MariaDB..."
 
-until mysqladmin ping \
+DB_READY=0
+for i in $(seq 1 30); do
+	if mysqladmin ping \
 	-h"$WP_DB_HOST" \
 	-u"$WP_DB_USER" \
 	-p"$DB_PASSWORD" \
 	--silent
-do
+	then
+		DB_READY=1
+		break
+	fi
 	sleep 2
 done
 
