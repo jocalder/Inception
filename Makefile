@@ -1,7 +1,7 @@
 GREEN		=	\033[0;32m
-RED		=	\033[0;31m
+RED			=	\033[0;31m
 YELLOW		=	\033[0;33m
-NC		=	\033[0m
+NC			=	\033[0m
 
 
 COMPOSE_FILE	=	srcs/docker-compose.yml
@@ -48,7 +48,7 @@ clean: down
 fclean: clean
 	@echo "$(RED) Full cleanup..$(NC)"
 	docker-compose -f $(COMPOSE_FILE) down -v --rmi all
-	@rm -rf $(DATA_DIR)
+	sudo rm -rf $(DATA_DIR)
 	docker system prune -af
 	@echo "$(RED) Data removed..$(NC)"
 
